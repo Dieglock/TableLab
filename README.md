@@ -1,5 +1,4 @@
 # TableLab
-Database handler for Android TableLab&lt;T>
 
 Solves a common scenario: new app in your hands, new models. Why to write crud again? 
 
