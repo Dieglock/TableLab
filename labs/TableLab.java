@@ -892,6 +892,7 @@ public abstract class TableLab<T> {
     public static final String ASC = " ASC ";
     public static final String COUNT = " COUNT ";
     public static final String CREATE = "CREATE TABLE ";
+    public static final String COMMA = ",";
     public static final String DESC = " DESC ";
     public static final String DROP = "DROP TABLE IF EXISTS ";
     public static final String FROM = " FROM ";
