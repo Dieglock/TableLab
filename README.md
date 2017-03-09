@@ -25,7 +25,7 @@ Lets say the bean in question is Word(id, name, usage_example, created, updated)
 
           public WordTable openWordLab() {
           return new WordTable(mActivity, writable())
-     }
+          }
 
 
 That is all. WordTable has all the crud. You can open close it like this:
