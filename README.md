@@ -9,22 +9,30 @@ It is better to copy the lab folder extend and enjoy...
 
 Lets say the bean in question is Word(id, name, usage_example, created, updated);
 
-1. Extend TableLab with your object: "WordTable extends TableLab<Word>".
-2. Declare life cycle ad DbHelper: "Wordtable.create(db)" and "WordTable.drop(db)"
+1. Extend TableLab with your object: 
+
+          WordTable extends TableLab<Word> {...}
+          
+2. Declare life cycle ad DbHelper: 
+
+          Under onCreate()
+          Wordtable.create(db) 
+          
+          under onUpgrade()
+          WordTable.drop(db)
+
 3. Give your self a nice method at DbManager, like: 
 
           public WordTable openWordLab() {
           return new WordTable(mActivity, writable())
      }
-     
-4. You can instantiate like this:
 
-DbManager manager = new DbManager(activity);
-WordTable wordLab = manger.openWordLab();
 
-wordLab can SAVE, UPDATE, DELETE, LIST, LIST LIKE, LIST EXACT, PRINT DATABASE SCHEMA... and more.
+That is all. WordTable has all the crud. You can open close it like this:
 
-manager.closeLab(wordLab); // do nor forget
+          DbManager manager = new DbManager(activity);
+          WordTable wordLab = manger.openWordLab();
+          manager.closeLab(wordLab); // do nor forget
 
 
 # Entension example
