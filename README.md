@@ -37,37 +37,37 @@ That is all. WordTable has all the crud. You can open close it like this:
 
 # Entension example
 
-public class WordTable extends TableLab<Word> {
+    public class WordTable extends TableLab<Word> {
 
-    public static final String TABLE = "words";
-    public static final String USAGE_EXAMPLE = "usage_example";
+       public static final String TABLE = "words";
+       public static final String USAGE_EXAMPLE = "usage_example";
 
-    public WordTable(Activity activity, SQLiteDatabase database) {
+       public WordTable(Activity activity, SQLiteDatabase database) {
         super(activity, database);
-    }
+       }
 
-    public static void create(SQLiteDatabase database) {
+       public static void create(SQLiteDatabase database) {
         database.execSQL(CREATE + TABLE + " (" +
                 ID + " " + PRIMARY_KEY + ", " +
                 NAME + " " + TEXT_NOT_NULL + ", " +
                 USAGE_EXAMPLE + " " + TEXT_NOT_NULL + ", " +
                 CREATED + " " + INTEGER_NOT_NULL + ", " +
                 UPDATED + " " + INTEGER_NOT_NULL + ")");
-    }
+       }
 
-    public static void drop(SQLiteDatabase database) {
+       public static void drop(SQLiteDatabase database) {
         database.execSQL(DROP + TABLE);
-    }
+       }
 
-    @Override
-    public String table() {
+       @Override
+       public String table() {
         return TABLE; // table name
-    }
+       }
 
-    @Override
-    public String where() {
+       @Override
+       public String where() {
         return NAME; // default column to order alphabetically
-    }
+       }
     
     @Override
     public String when() {
