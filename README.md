@@ -37,64 +37,64 @@ That is all. WordTable has all the crud. You can open close it like this:
 
 # Entension example
 
-    public class WordTable extends TableLab<Word> {
+              public class WordTable extends TableLab<Word> {
 
-       public static final String TABLE = "words";
-       public static final String USAGE_EXAMPLE = "usage_example";
+                 public static final String TABLE = "words";
+                 public static final String USAGE_EXAMPLE = "usage_example";
 
-       public WordTable(Activity activity, SQLiteDatabase database) {
-        super(activity, database);
-       }
+                 public WordTable(Activity activity, SQLiteDatabase database) {
+                  super(activity, database);
+                 }
 
-       public static void create(SQLiteDatabase database) {
-        database.execSQL(CREATE + TABLE + " (" +
-                ID + " " + PRIMARY_KEY + ", " +
-                NAME + " " + TEXT_NOT_NULL + ", " +
-                USAGE_EXAMPLE + " " + TEXT_NOT_NULL + ", " +
-                CREATED + " " + INTEGER_NOT_NULL + ", " +
-                UPDATED + " " + INTEGER_NOT_NULL + ")");
-       }
+                 public static void create(SQLiteDatabase database) {
+                  database.execSQL(CREATE + TABLE + " (" +
+                          ID + " " + PRIMARY_KEY + ", " +
+                          NAME + " " + TEXT_NOT_NULL + ", " +
+                          USAGE_EXAMPLE + " " + TEXT_NOT_NULL + ", " +
+                          CREATED + " " + INTEGER_NOT_NULL + ", " +
+                          UPDATED + " " + INTEGER_NOT_NULL + ")");
+                 }
 
-       public static void drop(SQLiteDatabase database) {
-        database.execSQL(DROP + TABLE);
-       }
+                 public static void drop(SQLiteDatabase database) {
+                  database.execSQL(DROP + TABLE);
+                 }
 
-       @Override
-       public String table() {
-        return TABLE; // table name
-       }
+                 @Override
+                 public String table() {
+                  return TABLE; // table name
+                 }
 
-       @Override
-       public String where() {
-        return NAME; // default column to order alphabetically
-       }
+                 @Override
+                 public String where() {
+                  return NAME; // default column to order alphabetically
+                 }
     
-    @Override
-    public String when() {
-        return UPDATED; // default column to oder by time
-    }
+              @Override
+              public String when() {
+                  return UPDATED; // default column to oder by time
+              }
 
-    @Override
-    public ContentValues values(Word word) { // default method to save and upate
-        ContentValues values = new ContentValues();
-        values.put(NAME, word.getName());
-        values.put(USAGE_EXAMPLE, word.getExtra());
-        values.put(CREATED, word.getCreated().getMillis());
-        values.put(UPDATED, word.getCreated().getMillis());
-        return values;
-    }
+              @Override
+              public ContentValues values(Word word) { // default method to save and upate
+                  ContentValues values = new ContentValues();
+                  values.put(NAME, word.getName());
+                  values.put(USAGE_EXAMPLE, word.getExtra());
+                  values.put(CREATED, word.getCreated().getMillis());
+                  values.put(UPDATED, word.getCreated().getMillis());
+                  return values;
+              }
 
-    @Override
-    public Word model(Cursor cursor) { // default method to recreate with cursor
-        return new Word(
-        cursor.getInt(cursor.getColumnIndex(ID)),
-        cursor.getString(cursor.getColumnIndex(NAME)),
-        cursor.getString(cursor.getColumnIndex(USAGE_EXAMPLE)),
-        TableLab.date(cursor.getColumnIndex(CREATED)),
-        TableLab.date(cursor.getColumnIndex(UPDATED))
-        );
-    }
-}
+              @Override
+              public Word model(Cursor cursor) { // default method to recreate with cursor
+                  return new Word(
+                  cursor.getInt(cursor.getColumnIndex(ID)),
+                  cursor.getString(cursor.getColumnIndex(NAME)),
+                  cursor.getString(cursor.getColumnIndex(USAGE_EXAMPLE)),
+                  TableLab.date(cursor.getColumnIndex(CREATED)),
+                  TableLab.date(cursor.getColumnIndex(UPDATED))
+                  );
+              }
+          }
 
 
 
