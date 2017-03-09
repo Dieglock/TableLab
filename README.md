@@ -9,40 +9,22 @@ It is better to copy the lab folder extend and enjoy...
 
 Lets say the bean in question is Word(id, name, usage_example, created, updated);
 
-1. Define at DbHelper database name and version.
-2. Extend TableLab.
-3. Define with static strings the table name and required extra fields.
-4. Write static methods to create and drop table.
-5. Solve the five abstracts like the example below.
-6. At DbHelper, use create method at onCreate and drop at onUpgrade.
-7. At DbManager, write a shortcut for your table:
-     public WordTable openWordLab() {
+1. Extend TableLab with your object: "WordTable extends TableLab<Word>".
+2. Declare life cycle ad DbHelper: "Wordtable.create(db)" and "WordTable.drop(db)"
+3. Give your self a nice method at DbManager, like: 
+
+          public WordTable openWordLab() {
           return new WordTable(mActivity, writable())
      }
+     
+4. You can instantiate like this:
 
-8. At your activity declare all as fields and inside onCreate open your manager:
+DbManager manager = new DbManager(activity);
+WordTable wordLab = manger.openWordLab();
 
-private DbManager mDbManager;
-private DbLab mDbLab; // Use it to query database metadata.
-private WordTable wordLab;
+wordLab can SAVE, UPDATE, DELETE, LIST, LIST LIKE, LIST EXACT, PRINT DATABASE SCHEMA... and more.
 
-// inside onCreate
-mDbManager = new DbManger(MyActivity.this);
-
-And enjoy all the premade crude:
-
-Bean myBean...
-
-wordLab = mDbManager.openWordLab();
-
-wordLab.save(myBean);
-wordLab.saveWithResponse(myBean); // returns sql long
-wordLab.update(myBean, id); // ups (under construction)
-wordLab.saveWithResponse(myBean, id); // returns sql long
-wordLab.delete(id)
-
-wordLab.find(id)
-
+manager.closeLab(wordLab); // do nor forget
 
 
 # Entension example
