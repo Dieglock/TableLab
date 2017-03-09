@@ -19,7 +19,7 @@ public class DbHelper extends SQLiteOpenHelper {
     public static final String TAG = DbHelper.class.getSimpleName();
 
 
-    public static String DATABASE_NAME ="yerbalibro.db";
+    public static String DATABASE_NAME ="your_database.db";
     public static int DATABASE_VERSION = 1;
 
     public DbHelper(Context context) {
