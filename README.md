@@ -33,7 +33,7 @@ That is all. WordTable has all the crud. You can open close it like this:
           DbManager manager = new DbManager(activity);
           WordTable wordLab = manger.openWordLab();
           wordLad.save(myBean); // ETC
-          manager.closeLab(wordLab); // do nor forget
+          manager.close(wordLab); // do nor forget
 
 
 # Entension example
