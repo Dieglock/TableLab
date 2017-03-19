@@ -31,7 +31,8 @@ Lets say the bean in question is a trilingual dictionary entry like Word(id, nom
 
           DbManager manager = new DbManager(activity);
           WordTable wordLab = manager.openWordLab();
-          wordLad.save(myBean); // ETC*
+          wordLab.save(myBean);
+          wordLab.list(true, true) // select all, order by time asc ETC*
           manager.closeLab(); // do NOT forget
 
 * Save, find, update, list normally, list asynchronously, log tables and database schema, query for statistics, seed from .txt, etc...

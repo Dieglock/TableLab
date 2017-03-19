@@ -1,4 +1,3 @@
-//package com.dominicapps.dictionary.tablelab.labs;
 package com.dominicapps.tablelab.lab.labs;
 
 import android.app.Activity;
@@ -9,10 +8,9 @@ import android.database.sqlite.SQLiteDatabase;
 import com.dominicapps.tablelab.lab.utils.Pair;
 
 /**
- * Lab to fast create tables with common id, left, right.
- * Check DatingTable for implementation
+ * Lab to fast create tables with very common scenario: id, left, right.
  */
-
+// TODO retest
 public abstract class ManyLab extends TableLab<Pair> {
     public static final String TAG = ManyLab.class.getSimpleName();
 
@@ -29,7 +27,22 @@ public abstract class ManyLab extends TableLab<Pair> {
     }
 
     @Override
-    public String where() {
+    public String[] where() {
+        return new String[0];
+    }
+
+    @Override
+    public String orderBy() {
+        return null;
+    }
+
+    @Override
+    public String groupBy() {
+        return null;
+    }
+
+    @Override
+    public String having() {
         return null;
     }
 
