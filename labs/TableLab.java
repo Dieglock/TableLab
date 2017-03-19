@@ -599,9 +599,6 @@ public abstract class TableLab<T> {
     //////// ASYNC TASK ///////////////////////////////////////////////////////////////////////////
 
     public class HeavyTask extends AsyncTask<String[], Integer, Cursor> {
-
-
-
         @Override
         protected Cursor doInBackground(String[]... params) {
             if (printLog) {
