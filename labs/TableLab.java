@@ -41,12 +41,11 @@ import java.util.regex.Pattern;
 public abstract class TableLab<T> {
     public static final String TAG = TableLab.class.getSimpleName();
 
-    // TODO implement asyntask option to list select
-
+    
     /**
      * If on every call made to database is logged.
      */
-    public static boolean printLog = true;
+    public static boolean printLog = false;
 
     //////// ABSTRACTS ////////////////////////////////////////////////////////////////////////
 
@@ -60,26 +59,29 @@ public abstract class TableLab<T> {
 
     private SQLiteDatabase mDatabase = null;
     private DbManager mDbManager;
+    private Activity mActivity;
+    private HeavyTask mHeavyTask;
 
     //////// CONSTRUCTOR ///////////////////////////////////////////////////////////////////////
 
     public TableLab(Activity activity, SQLiteDatabase database) {
+        mActivity = activity;
         mDatabase = database;
         mDbManager = new DbManager(activity);
     }
 
-    //////// CREATE /////////////////////////////////////////////////////////////////////////////
+    //////// CREATE_TABLE /////////////////////////////////////////////////////////////////////////////
 
     /**
      *
      * @param t TableLab<T> object
      */
     public void save(T t) {
-        mDatabase.insert(table(), null, values(t));
-
         if (printLog) {
-            Log.d(TAG, "Saving " + t.getClass().getSimpleName());
+            Log.v(TAG, "Saving " + t.getClass().getSimpleName());
         }
+
+        mDatabase.insert(table(), null, values(t));
     }
 
     /**
@@ -89,7 +91,7 @@ public abstract class TableLab<T> {
      */
     public long saveWithResponse(T t) {
         if (printLog) {
-            Log.d(TAG, "Saving with response" + t.getClass().getSimpleName());
+            Log.v(TAG, "Saving with response" + t.getClass().getSimpleName());
         }
 
         return mDatabase.insertOrThrow(table(), null, values(t));
@@ -101,7 +103,7 @@ public abstract class TableLab<T> {
      */
     public void saveBatch(ArrayList<T> labTs) {
         if (printLog) {
-            Log.d(TAG, "Batch saving");
+            Log.v(TAG, "Batch saving");
         }
 
         for (int i=0;i<labTs.size();i++) {
@@ -118,7 +120,7 @@ public abstract class TableLab<T> {
      */
     public void update(T t, int id) {
         if (printLog) {
-            Log.d(TAG, "Updating " + t.getClass().getSimpleName());
+            Log.v(TAG, "Updating " + t.getClass().getSimpleName());
         }
         // TODO get id from t
         mDatabase.update(table(), values(t), "id=?", new String[]{String.valueOf(id)});
@@ -132,7 +134,7 @@ public abstract class TableLab<T> {
      */
     public long updateWithResponse(T t, int id) {
         if (printLog) {
-            Log.d(TAG, "Updating with response " + t.getClass().getSimpleName());
+            Log.v(TAG, "Updating with response " + t.getClass().getSimpleName());
         }
         // TODO get id from t
         return mDatabase.update(table(), values(t), "id=?", new String[]{String.valueOf(id)});
@@ -146,10 +148,26 @@ public abstract class TableLab<T> {
      */
     public void delete(int id) {
         if (printLog) {
-            Log.d(TAG, "Deleting " + String.valueOf(id));
+            Log.v(TAG, "Deleting " + String.valueOf(id));
         }
 
         mDatabase.execSQL("DELETE FROM " + table() + " WHERE id =?", new String[]{String.valueOf(id)});
+    }
+
+    public void delete(int id, String where) {
+        if (printLog) {
+            Log.v(TAG, "Deleting " + where + "=" + String.valueOf(id));
+        }
+
+        mDatabase.execSQL("DELETE FROM " + table() + " WHERE " + where + "=?", new String[]{String.valueOf(id)});
+    }
+
+    public void delete(String what, String where) {
+        if (printLog) {
+            Log.v(TAG, "Deleting " + what);
+        }
+
+        mDatabase.execSQL("DELETE FROM " + table() + " WHERE " + where + "=?", new String[]{what});
     }
 
     //////// FIND ///////////////////////////////////////////////////////////////////////////////
@@ -193,17 +211,6 @@ public abstract class TableLab<T> {
     //////// FIND MASTER //////////////////////////////////////////////////////////////////////
 
     /**
-     * Master find
-     * @param id choose > 0 = find by id | id 0 is find by where(), where or when()
-     * @param columns columns to retrieve.
-     * @param query search arguments
-     * @param isExact choose query = ? | query LIKE ?
-     * @param startDate start range for when()
-     * @param endDate end range for when()
-     * @return TableLab<T> T object
-     */
-
-    /**
      *
      * @param id
      * @param columns
@@ -229,7 +236,7 @@ public abstract class TableLab<T> {
         List<String> params = new ArrayList<>();
 
         if (id > 0) {
-            queryBuilder.append(ID).append("=?");
+            queryBuilder.append(ID).append(" =?");
             params.add(String.valueOf(id));
 
         } else if (!isEmpty(query)) {
@@ -271,11 +278,14 @@ public abstract class TableLab<T> {
         params.toArray(whereArgs);
 
         try {
+            SQLiteQueryBuilder builder = new SQLiteQueryBuilder();
+            builder.setTables(table());
+            String sql = builder.buildQuery(columns, queryArgs, null, null, null, "1");
 
-            cursor = mDatabase.query(table(), columns, queryArgs, whereArgs, null, null, null, "1");
+            cursor = mDatabase.rawQuery(sql, whereArgs);
 
             if (printLog) {
-                Log.d(TAG, "FIND 1 | SELECT " + logFor(cols(columns))  + " FROM " + table() + " WHERE " + logWhere(whereArgs) + "=" + queryArgs);
+                Log.v(TAG, sql + logSelect(query));
             }
 
             if (cursor != null && cursor.moveToFirst()) {
@@ -292,68 +302,118 @@ public abstract class TableLab<T> {
 
     //////// LIST //////////////////////////////////////////////////////////////////////////////
 
-    public ArrayList<T> list(boolean orderByTime, boolean descOrder) {
-        return select(null, null, null, null, false, null, null, null, orderByTime, descOrder, null, null);
+    /**
+     *
+     * @param orderByTime choose when() | where()
+     * @param ascOrder choose ASC | DESC
+     * @return T object list
+     */
+    public ArrayList<T> list(boolean orderByTime, boolean ascOrder) {
+        return select(null, null, null, null, null, false, null, null, null, orderByTime, ascOrder, null, null, false);
     }
 
-    public ArrayList<T> list(String query, boolean orderByTime, boolean descOrder) {
-        return select(null, new String[]{where()}, where(), query, false, null, null, null, orderByTime, descOrder, null, null);
+    public ArrayList<T> list(String query, boolean orderByTime, boolean ascOrder) {
+        return select(null, null, new String[]{where()}, where(), query, false, null, null, null, orderByTime, ascOrder, null, null, false);
     }
 
-    public ArrayList<T> list(String[] where, String query, boolean orderByTime, boolean descOrder) {
-        return select(null, where, where(), query, false, null, null, null, orderByTime, descOrder, null, null);
+    public ArrayList<T> list(String[] where, String query, boolean orderByTime, boolean ascOrder) {
+        return select(null, null, where, where(), query, false, null, null, null, orderByTime, ascOrder, null, null, false);
     }
 
-    public ArrayList<T> list(String[] where, String orderByColumn, String query, boolean orderByTime, boolean descOrder) {
-        return select(null, where, orderByColumn, query, false, null, null, null, orderByTime, descOrder, null, null);
+    public ArrayList<T> list(String[] where, String orderByColumn, String query, boolean orderByTime, boolean ascOrder) {
+        return select(null, null, where, orderByColumn, query, false, null, null, null, orderByTime, ascOrder, null, null, false);
     }
 
-    public ArrayList<T> like(String query, boolean orderByTime, boolean descOrder) {
-        return select(null, new String[]{where()}, where(), query, false, null, null, null, orderByTime, descOrder, null, null);
+    public ArrayList<T> like(String query, boolean orderByTime, boolean ascOrder) {
+        return select(null, null, new String[]{where()}, where(), query, false, null, null, null, orderByTime, ascOrder, null, null, false);
     }
 
-    public ArrayList<T> like(String[] where, String query, boolean orderByTime, boolean descOrder) {
-        return select(null, where, where(), query, false, null, null, null, orderByTime, descOrder, null, null);
+    public ArrayList<T> like(String[] where, String query, boolean orderByTime, boolean ascOrder) {
+        return select(null, null, where, where(), query, false, null, null, null, orderByTime, ascOrder, null, null, false);
     }
 
-    public ArrayList<T> like(String[] where, String orderByColumn, String query, boolean orderByTime, boolean descOrder) {
-        return select(null, where, orderByColumn, query, false, null, null, null, orderByTime, descOrder, null, null);
+    public ArrayList<T> like(String[] where, String orderByColumn, String query, boolean orderByTime, boolean ascOrder) {
+        return select(null, null, where, orderByColumn, query, false, null, null, null, orderByTime, ascOrder, null, null, false);
     }
 
-    public ArrayList<T> exact(String query, boolean orderByTime, boolean descOrder) {
-        return select(null, new String[]{where()}, where(), query, true, null, null, null, orderByTime, descOrder, null, null);
+    public ArrayList<T> exact(String query, boolean orderByTime, boolean ascOrder) {
+        return select(null, null, new String[]{where()}, where(), query, true, null, null, null, orderByTime, ascOrder, null, null, false);
     }
 
-    public ArrayList<T> exact(String[] where, String query, boolean orderByTime, boolean descOrder) {
-        return select(null, where, where(), query, true, null, null, null, orderByTime, descOrder, null, null);
+    public ArrayList<T> exact(String[] where, String query, boolean orderByTime, boolean ascOrder) {
+        return select(null, null, where, where(), query, true, null, null, null, orderByTime, ascOrder, null, null, false);
     }
 
-    public ArrayList<T> exact(String[] where, String orderByColumn, String query, boolean orderByTime, boolean descOrder) {
-        return select(null, where, orderByColumn, query, true, null, null, null, orderByTime, descOrder, null, null);
+    public ArrayList<T> exact(String[] where, String orderByColumn, String query, boolean orderByTime, boolean ascOrder) {
+        return select(null, null, where, orderByColumn, query, true, null, null, null, orderByTime, ascOrder, null, null, false);
     }
 
-    //////// LIST MASTER //////////////////////////////////////////////////////////////////////
+    //////// ASYNC TASK //////////////////////////////////////////////////////////////////////////////
 
-    // columns, query, isExact, groupBy, having, limit,
-    // orderByColumn, orderByTime, descOrder, startDate, endDate
+    public ArrayList<T> listAsync(boolean orderByTime, boolean ascOrder) {
+        return select(null, null, null, null, null, false, null, null, null, orderByTime, ascOrder, null, null, true);
+    }
+
+    public ArrayList<T> listAsync(String query, boolean orderByTime, boolean ascOrder) {
+        return select(null, null, new String[]{where()}, where(), query, false, null, null, null, orderByTime, ascOrder, null, null, true);
+    }
+
+    public ArrayList<T> listAsync(String[] where, String query, boolean orderByTime, boolean ascOrder) {
+        return select(null, null, where, where(), query, false, null, null, null, orderByTime, ascOrder, null, null, true);
+    }
+
+    public ArrayList<T> listAsync(String[] where, String orderByColumn, String query, boolean orderByTime, boolean ascOrder) {
+        return select(null, null, where, orderByColumn, query, false, null, null, null, orderByTime, ascOrder, null, null, true);
+    }
+
+    //////// LIST COMMON //////////////////////////////////////////////////////////////////////
 
     /**
      *
-     * @param columns
-     * @param where
-     * @param orderByColumn
-     * @param query
-     * @param isExact
-     * @param groupBy
-     * @param having
-     * @param limit
-     * @param orderByTime
-     * @param descOrder
-     * @param start
-     * @param end
-     * @return
+     * @param parentId parentId
+     * @param where column with parent keys
+     * @param orderByTime choose when() | where()
+     * @param ascOrder choose ASC | DESC
+     * @return T object list
      */
-    public ArrayList<T> select(@Nullable String[] columns,
+    public ArrayList<T> children(int parentId, String[] where, boolean orderByTime, boolean ascOrder) {
+        return select(null, null, where, null, String.valueOf(parentId), true, null, null, null, orderByTime, ascOrder, null, null, false);
+    }
+
+    /**
+     *
+     * @param parentId parentId
+     * @param where column with parent keys
+     * @param orderByTime choose when() | where()
+     * @param ascOrder choose ASC | DESC
+     * @return T object list
+     */
+    public ArrayList<T> childrenAsync(int parentId, String[] where, boolean orderByTime, boolean ascOrder) {
+        return select(null, null, where, null, String.valueOf(parentId), true, null, null, null, orderByTime, ascOrder, null, null, true);
+    }
+
+
+    //////// LIST MASTER //////////////////////////////////////////////////////////////////////
+
+    /**
+     *
+     * @param columns columns to retrieve
+     * @param where columns to search
+     * @param orderByColumn select a different where from default where()
+     * @param query search criteria
+     * @param isExact choose query = ? | query like = ?
+     * @param groupBy group by
+     * @param having having
+     * @param limit limit
+     * @param orderByTime choose when() | where()
+     * @param ascOrder choose ASC | DESC
+     * @param start start date for range when()
+     * @param end end date for range()
+     * @param asyncTask task for heavy load
+     * @return T object list
+     */
+    public ArrayList<T> select(String table,
+                               @Nullable String[] columns,
                                @Nullable String[] where,
                                String orderByColumn,
                                @Nullable String query,
@@ -362,9 +422,10 @@ public abstract class TableLab<T> {
                                String having,
                                String limit,
                                boolean orderByTime,
-                               boolean descOrder,
+                               boolean ascOrder,
                                @Nullable DateTime start,
-                               @Nullable DateTime end) {
+                               @Nullable DateTime end,
+                               boolean asyncTask) {
 
         ArrayList<T> objects = new ArrayList<>();
         Cursor cursor = null;
@@ -374,46 +435,55 @@ public abstract class TableLab<T> {
         StringBuilder queryBuilder = new StringBuilder();
         List<String> params = new ArrayList<>();
 
+        String theTable;
+        if (null != table) {
+            theTable = table;
+        } else {
+            theTable = table();
+        }
 
         if (!isEmpty(query)) {
 
             for (int i = 0; i < where.length; i++) {
-
-                if (queryBuilder.length() > 0) {
-                    queryBuilder.append(" AND ");
-                }
-
                 if (isExact) {
-                    queryBuilder.append(where[i]).append(" =?");
+                    if (queryBuilder.length() > 0) {
+                        queryBuilder.append(" AND ");
+                    }
+
+                    queryBuilder.append(where[i]).append("=?");
                     params.add(query);
 
                 } else {
+                    if (queryBuilder.length() > 0) {
+                        queryBuilder.append(" OR ");
+                    }
+
                     queryBuilder.append(where[i]).append(" LIKE ?");
                     params.add(prepareLikeParams(query.toLowerCase()));
                 }
             }
+        }
 
-            if (orderByTime) {
-                if (descOrder) {
-                    orderBy = when() + " DESC ";
-
-                } else {
-                    orderBy = when() + " ASC ";
-                }
+        if (orderByTime) {
+            if (ascOrder) {
+                orderBy = when() + " DESC ";
 
             } else {
-                String theWhere = null;
-                if (null == orderByColumn) {
-                    theWhere = where();
-                } else {
-                    theWhere = orderByColumn;
-                }
+                orderBy = when() + " ASC ";
+            }
 
-                if (descOrder) {
-                    orderBy = "lower(" + theWhere + ") DESC ";
-                } else {
-                    orderBy = "lower(" + theWhere + ") ASC ";
-                }
+        } else {
+            String theWhere = null;
+            if (null == orderByColumn) {
+                theWhere = where();
+            } else {
+                theWhere = orderByColumn;
+            }
+
+            if (ascOrder) {
+                orderBy = "lower(" + theWhere + ") ASC ";
+            } else {
+                orderBy = "lower(" + theWhere + ") DESC ";
             }
         }
 
@@ -422,11 +492,11 @@ public abstract class TableLab<T> {
                 queryBuilder.append(" AND ");
             }
 
-            queryBuilder.append(when()).append(" > ?");
+            queryBuilder.append(when()).append(">?");
             params.add(String.valueOf(start.getMillis()));
 
             queryBuilder.append(" AND ");
-            queryBuilder.append(when()).append(" < ?");
+            queryBuilder.append(when()).append("<?");
             params.add(String.valueOf(end.getMillis()));
         }
 
@@ -438,12 +508,33 @@ public abstract class TableLab<T> {
 
         try {
 
+            SQLiteQueryBuilder builder = new SQLiteQueryBuilder();
+            builder.setTables(theTable);
+            String sql = builder.buildQuery(columns, queryArgs, groupBy, having, orderBy, limit);
+
             if (printLog) {
-                Log.d(TAG, "SELECT " + logFor(cols(columns)) + " FROM " + table() + logWhere(whereArgs)
-                        + logSelect(queryArgs) + logByGroup(groupBy) + logHaving(having) + " ORDER BY " + orderBy + logLimit(limit));
+                Log.v(TAG, sql + logSelect(query));
             }
 
-            cursor = mDatabase.query(table(), columns, queryArgs, whereArgs, groupBy, having, orderBy, limit);
+
+            if (asyncTask) {
+                mHeavyTask = new HeavyTask();
+                mHeavyTask.execute(new String[]{sql}, whereArgs);
+
+                try {
+
+                    cursor = mHeavyTask.get();
+
+                } catch (InterruptedException e) {
+                    Log.e(TAG, e.getMessage());
+                } catch (ExecutionException e) {
+                    Log.e(TAG, e.getMessage(), e.fillInStackTrace());
+                }
+
+
+            } else  {
+                cursor = mDatabase.rawQuery(sql, whereArgs);
+            }
 
             if (cursor != null) {
                 while (cursor.moveToNext()) {
@@ -456,12 +547,40 @@ public abstract class TableLab<T> {
             mDbManager.close(cursor);
         }
 
+//        Log.d(TAG, "Size: " + String.valueOf(objects.size()));
         return objects;
+    }
+
+    //////// ASYNC TASK ///////////////////////////////////////////////////////////////////////////
+
+    public class HeavyTask extends AsyncTask<String[], Integer, Cursor> {
+
+
+
+        @Override
+        protected Cursor doInBackground(String[]... params) {
+//            DbHelper helper = new DbHelper(labContext());
+//            SQLiteDatabase asyncDb = helper.getReadableDatabase();
+
+            if (printLog) {
+                Log.v(TAG, "AsyncTask in background start ");
+            }
+                return mDatabase.rawQuery(params[0][0], params[1]);
+            }
+
+            @Override
+            protected void onPostExecute(Cursor cursor) {
+                super.onPostExecute(cursor);
+            if (printLog) {
+                Log.v(TAG, "AsyncTask in background complete");
+            }
+        }
     }
 
     //////// COMMON QUERIES ///////////////////////////////////////////////////////////////////////
 
     public T theMode(String table, String value) {
+        // todo test
         T t = null;
         Cursor cursor = null;
         String times = "times";
@@ -475,7 +594,7 @@ public abstract class TableLab<T> {
 
         try {
             if (printLog) {
-                Log.d(TAG, selection);
+                Log.v(TAG, selection);
             }
 
             cursor = mDatabase.rawQuery(selection, null);
@@ -489,33 +608,34 @@ public abstract class TableLab<T> {
         return t;
     }
 
-//    public int theMean(String table, String value) {
-//        T t = null;
-//        Cursor cursor = null;
-//        String times = "times";
-//        String selectedTable = null;
-//
-//        String selection = SELECT + "`" + value + "`," + COUNT + "(*) " + AS + "`" + times + "`" +
-//                FROM + table;
-//        // + LIMIT + "1";
-//        //+ GROUP_BY + "`" + value +"`" + ORDER_BY + "`" + times + "`" +
-//
-//
-//        try {
-//            if (printLog) {
-//                Log.d(TAG, selection);
-//            }
-//
-//            cursor = mDatabase.rawQuery(selection, null);
-//
-//            if (cursor != null && cursor.moveToFirst()) {
-//                t = model(cursor);
-//            }
-//        } finally {
-//            mDbManager.close(cursor);
-//        }
-//        return t;
-//    }
+    public T theMean(String table, String value) {
+        // todo test
+        T t = null;
+        Cursor cursor = null;
+        String times = "times";
+        String selectedTable = null;
+
+        String selection = SELECT + "`" + value + "`," + COUNT + "(*) " + AS + "`" + times + "`" +
+                FROM + table;
+        // + LIMIT + "1";
+        //+ GROUP_BY + "`" + value +"`" + ORDER_BY + "`" + times + "`" +
+
+
+        try {
+            if (printLog) {
+                Log.v(TAG, selection);
+            }
+
+            cursor = mDatabase.rawQuery(selection, null);
+
+            if (cursor != null && cursor.moveToFirst()) {
+                t = model(cursor);
+            }
+        } finally {
+            mDbManager.close(cursor);
+        }
+        return t;
+    }
 
     //////// META QUERIES ///////////////////////////////////////////////////////////////////////
 
@@ -523,7 +643,7 @@ public abstract class TableLab<T> {
         String select = SELECT_COUNT_ALL_FROM + table();
 
         if (printLog) {
-            Log.d(TAG, select);
+            // Log.v(TAG, select);
         }
 
         int count = -1;
@@ -547,7 +667,21 @@ public abstract class TableLab<T> {
     public ArrayList<String> tables() {
         String select = "select name from sqlite_master where type='table' order by name";
         if (printLog) {
-            Log.d(TAG, select);
+            // Log.v(TAG, select);
+        }
+        ArrayList<String> tables = new ArrayList<>();
+        Cursor cursor = mDatabase.rawQuery(select, null);
+        while (cursor.moveToNext()) {
+            tables.add(cursor.getString(0));
+        }
+        cursor.close();
+        return tables;
+    }
+
+    public ArrayList<String> views() {
+        String select = "select name from sqlite_master where type='view' order by name";
+        if (printLog) {
+            // Log.v(TAG, select);
         }
         ArrayList<String> tables = new ArrayList<>();
         Cursor cursor = mDatabase.rawQuery(select, null);
@@ -561,7 +695,7 @@ public abstract class TableLab<T> {
     public ArrayList<String> columns(String table) {
         String select = "PRAGMA table_info(" + table + ")";
         if (printLog) {
-            Log.d(TAG, select);
+            // Log.v(TAG, select);
         }
 
         ArrayList<String> columns = new ArrayList<>();
@@ -576,7 +710,7 @@ public abstract class TableLab<T> {
     public int entries() {
         int count = (int) DatabaseUtils.queryNumEntries(mDatabase, table());
         if (printLog) {
-            Log.d(TAG, "Table " + table() + " has " + String.valueOf(count) + " entries");
+            Log.v(TAG, "Table " + table() + " has " + String.valueOf(count) + " entries");
         }
         return  count;
     }
@@ -584,7 +718,7 @@ public abstract class TableLab<T> {
     public Cursor data(String[] columns) {
         String query = SELECT_ALL_FROM + table();
         if (printLog) {
-            Log.d(TAG, query + " WHERE " + logWhere(columns));
+            // Log.v(TAG, query + " WHERE " + logWhere(columns));
         }
         return mDatabase.rawQuery(SELECT_ALL_FROM + table(), columns);
     }
@@ -592,7 +726,7 @@ public abstract class TableLab<T> {
     public Cursor data() {
         String query = SELECT_ALL_FROM + table();
         if (printLog) {
-            Log.d(TAG, query);
+            // Log.v(TAG, query);
         }
 
         return mDatabase.rawQuery(query, null);
@@ -602,6 +736,7 @@ public abstract class TableLab<T> {
 
         ArrayList<String> schema = new ArrayList<>();
         int max = tables().size();
+        schema.add("TABLES\n");
 
         for (int i = 0; i < max; i++) {
             StringBuilder builder = new StringBuilder();
@@ -613,25 +748,43 @@ public abstract class TableLab<T> {
             schema.add(builder.toString());
         }
 
+        schema.add("\nVIEWS\n");
+        int remax = views().size();
+        for (int i = 0; i < remax; i++) {
+            StringBuilder builder2 = new StringBuilder();
+            String view = views().get(i);
+            String columns = columns(view).toString();
+            builder2.append(view).append(": ");
+            builder2.append(columns);
+            builder2.append("\n");
+            schema.add(builder2.toString());
+        }
+
         String result = schema.toString();
 
-        if (printLog) {
-            Log.d(TAG, "Database schema: " + result);
-        }
+        Log.v(TAG, "DATABASE SCHEMA: \n" + result);
 
         return result;
-
-
     }
 
-    public void logTable() {
-        Log.d(TAG, table() + " table:");
-        Log.d(TAG, "Columns: " );
+    public void logTable(boolean includeData) {
+        Log.v(TAG, "---table\n");
+        Log.v(TAG, table());
         for (String s : columns(table())) {
-            Log.d(TAG, s);
+            Log.v(TAG, s);
         }
-        Log.d(TAG, "Does it have data? " + hasData());
-        Log.d(TAG, "Number of entries: " + String.valueOf(entries()));
+        Log.v(TAG, ":");
+        Log.v(TAG, "data? " + hasData());
+        Log.v(TAG, "entries: " + String.valueOf(entries()));
+
+        // Log.v(TAG, "-*\n");
+        if (includeData) {
+            Log.v(TAG,"");
+            for (int i = 0; i > entries(); i++) {
+                T t = find(i);
+                Log.v(TAG, t.toString());
+            }
+        }
     }
 
     //////// UTILS /////////////////////////////////////////////////////////////////////////////
@@ -643,10 +796,6 @@ public abstract class TableLab<T> {
     public static DateTime date(int given) {
         return new DateTime(given);
     }
-
-//    public static String[] whereFromString(String query) {
-//        return new String[] {query};
-//    }
 
     public static String prepareLikeParams(String paramsToCompose) {
         String composed = null;
@@ -677,15 +826,11 @@ public abstract class TableLab<T> {
         return name.replaceAll(regex, replacement).toLowerCase();
     }
 
-    public static String logFor(String[] cols) {
-        return Arrays.toString(cols);
-    }
-
-    public static String[] cols(String[] columns) {
-        if (null == columns || columns.length < 1) {
-            return new String[]{"*"};
+    public static String logSelect(String selection) {
+        if (isEmpty(selection)) {
+            return "";
         } else {
-            return columns;
+            return " Selection: " + selection;
         }
     }
 
@@ -699,152 +844,54 @@ public abstract class TableLab<T> {
         }
     }
 
-    public static String logSelect(String selection) {
-        if (isEmpty(selection)) {
-            return "";
-        } else {
-            return " = " + selection;
-        }
-    }
-
-    public static String logLimit(String limit) {
-        if (isEmpty(limit)) {
-            return "";
-        } else {
-            return " LIMIT " + limit;
-        }
-    }
-
-    public static String logByGroup(String s) {
-        if (isEmpty(s)) {
-            return "";
-        } else {
-            return " GROUP BY "  + s;
-        }
-    }
-
-    public static String logHaving(String s) {
-        if (isEmpty(s)) {
-            return "";
-        } else {
-            return " HAVING " + s;
-        }
-    }
-
-    public static void toLog(String action, Class c) {
-        Log.d(TAG, action + c.getSimpleName());
-    }
-
-//    public void logSchema() {
-//        Log.d(TAG, schema());
-//    }
-
-//    public Activity labContext() {
-//        return mActivity;
+//    public static String logFor(String[] cols) {
+//        return Arrays.toString(cols);
 //    }
 //
-//    public SQLiteDatabase database() {
-//        return mDatabase;
+//    public static String[] cols(String[] columns) {
+//        if (null == columns || columns.length < 1) {
+//            return new String[]{"*"};
+//        } else {
+//            return columns;
+//        }
 //    }
 
+//    public static String logLimit(String limit) {
+//        if (isEmpty(limit)) {
+//            return "";
+//        } else {
+//            return " LIMIT " + limit;
+//        }
+//    }
+//
+//    public static String logByGroup(String s) {
+//        if (isEmpty(s)) {
+//            return "";
+//        } else {
+//            return " GROUP BY "  + s;
+//        }
+//    }
+//
+//    public static String logHaving(String s) {
+//        if (isEmpty(s)) {
+//            return "";
+//        } else {
+//            return " HAVING " + s;
+//        }
+//    }
 
-
-    //////// VALIDATION //////////////////////////////////////////////////////////////////////////
-
-    public static boolean isValidEmail(String email) {
-        Pattern pattern = Pattern.compile(EMAIL_PATTERN);
-        Matcher matcher = pattern.matcher(email);
-        return matcher.matches();
-    }
-
-    private boolean isValidPassword(@NonNull String password) {
-        if (password.length() > 7) {
-            return true;
-        } else {
-            Pattern pattern = Pattern.compile(ALPHANUMERIC_EXTENDED_PATTERN);
-            Matcher matcher = pattern.matcher(password);
-            return matcher.matches();
+    public static void classToLog(String action, Class c) {
+        if (printLog) {
+            Log.v(TAG, action + c.getSimpleName());
         }
     }
 
-    private boolean isValidToughPassword(@NonNull String password) {
-        if (password.length() > 7) {
-            return true;
-        } else {
-            Pattern pattern = Pattern.compile(PASSWORD_PATTERN);
-            Matcher matcher = pattern.matcher(password);
-            return matcher.matches();
-        }
+    public Activity labContext() {
+        return mActivity;
     }
 
-    public static boolean isValidUrl(String url) {
-        return Patterns.WEB_URL.matcher(url).matches();
-    }
-
-    public static boolean isValidDomain(String domain) {
-        return Patterns.WEB_URL.matcher(domain).matches();
-    }
-
-    public boolean isValidCardNumber(String cardNumber) {
-        try {
-            return validateCardNumber(cardNumber);
-        } catch (Exception e) {
-            Log.d(TAG, e.getMessage());
-
-            return false;
-        }
-    }
-
-    public static boolean validateCardNumber(String cardNumber) throws NumberFormatException {
-        int sum = 0, digit, addend = 0;
-        boolean doubled = false;
-        for (int i = cardNumber.length() - 1; i >= 0; i--) {
-            digit = Integer.parseInt(cardNumber.substring(i, i + 1));
-            if (doubled) {
-                addend = digit * 2;
-                if (addend > 9) {
-                    addend -= 9;
-                }
-            } else {
-                addend = digit;
-            }
-            sum += addend;
-            doubled = !doubled;
-        }
-        return (sum % 10) == 0;
-    }
-
-    //////// LOCALE /////////////////////////////////////////////////////////////////////////
-
-    public static Locale currentLocale(Activity activity) {
-        Locale locale = activity.getResources().getConfiguration().locale;
-        return locale;
-    }
-
-    public static String monthDayYear(DateTime dateTime, Locale locale) {
-        SimpleDateFormat monthDayYearFormatter = new SimpleDateFormat(MONTH_DAY_YEAR_DISPLAY, locale);
-        return monthDayYearFormatter.format(dateTime.toDate());
-    }
-
-    public static String fullDate(DateTime dateTime, Locale locale) {
-        SimpleDateFormat monthDayYearFormatter = new SimpleDateFormat(MONTH_DAY_YEAR_DISPLAY, locale);
-        return monthDayYearFormatter.format(dateTime.toDate());
-    }
-
-    public static String currency(BigDecimal amount, Locale locale) {
-        if (amount == null) {
-            amount = new BigDecimal(0);
-        }
-
-        DecimalFormat fmt = (DecimalFormat) NumberFormat.getInstance();
-        String symbol = Currency.getInstance(locale).getSymbol(locale);
-        fmt.setGroupingUsed(true);
-        fmt.setPositivePrefix(symbol + " ");
-        fmt.setNegativePrefix("-" + symbol + " ");
-        fmt.setMinimumFractionDigits(2);
-        fmt.setMaximumFractionDigits(2);
-
-        return fmt.format(amount);
+    public SQLiteDatabase database() {
+        return mDatabase;
     }
 
     //////// CONSTANTS //////////////////////////////////////////////////////////////////////////
@@ -880,6 +927,7 @@ public abstract class TableLab<T> {
 
     public static final String TITLE = "title";
     public static final String TYPE = "type";
+    public static final String DEFINITION = "definition";
     public static final String COMMENT = "comment";
     public static final String CONTENT = "content";
     public static final String LABEL = "label";
@@ -891,10 +939,14 @@ public abstract class TableLab<T> {
     public static final String AS = " AS ";
     public static final String ASC = " ASC ";
     public static final String COUNT = " COUNT ";
-    public static final String CREATE = "CREATE TABLE ";
+    public static final String CREATE_TABLE_IF_NOT_EXISTS = "CREATE TABLE IF NOT EXISTS ";
+    public static final String CREATE_TABLE = "CREATE TABLE ";
+    public static final String CREATE_VIEW = "CREATE VIEW ";
+    public static final String CREATE_VIEW_IF_NOT_EXISTS = "CREATE VIEW IF NOT EXISTS ";
     public static final String COMMA = ",";
     public static final String DESC = " DESC ";
-    public static final String DROP = "DROP TABLE IF EXISTS ";
+    public static final String DROP_TABLE_IF_EXISTS = "DROP TABLE IF EXISTS ";
+    public static final String DROP_VIEW_IF_EXISTS = "DROP VIEW IF EXISTS ";
     public static final String FROM = " FROM ";
     public static final String GROUP_BY = " GROUP BY ";
     public static final String INNER = " INNER ";
@@ -912,39 +964,13 @@ public abstract class TableLab<T> {
     public static final String TEXT = " TEXT";
     public static final String TEXT_NOT_NULL = " TEXT NOT NULL";
     public static final String WHERE = " WHERE ";
-    public static final String UNIQUE = " UNIQUE";
-
-    // Patterns
-    public static final String ALPHANUMERIC_PATTERN = "^[a-zA-Z0-9]*$";
-    public static final String ALPHANUMERIC_EXTENDED_PATTERN = "^[a-zA-Z0-9_@*^%?#+]*$";
-    public static final String EMAIL_PATTERN = "^[_A-Za-z0-9-\\+]+(\\.[_A-Za-z0-9-]+)*@[A-Za-z0-9-]+(\\.[A-Za-z0-9]+)*(\\.[A-Za-z]{2,})$";
-    public static final String PASSWORD_PATTERN = "^(?=.*[0-9])(?=.*[A-Z])(?=.*[@#$%^&+=!])(?=\\S+$).{4,}$";
+    public static final String UNIQUE = " UNIQUE ";
 
     // Dates
     public static final String END_DATE = "end_date";
     public static final String CREATED = "created";
     public static final String START_DATE = "start_date";
     public static final String UPDATED = "updated";
-
-    // Date patterns
-    public static final String MONTH_DAY_YEAR_DISPLAY = "MMM dd, yyyy";
-    public static final String DATE_TIME_DISPLAY = "MMM dd, yyyy. HH:mm";
-    public static final String DATE_DISPLAY_FORMAT = "EEE,  MMM d  yyyy ' at ' HH:mm";
-    public static final String DATE_TO_DATABASE = "yyyy MM dd HH:mm:ss";
-    public static final String DATE_CREATE_FORMAT = "yyyy.MM.dd 'at' HH:mm";
-    public static final String DATE_SEMI_FULL_FORMAT = "yyyy.MM.dd 'at' HH:mm:ss z";
-    public static final String DATE_FULL_TEXT = "yyyy.MM.dd 'dayYear: ' D ', weekYear: ' w ', hour: ' HH:mm:ss ', time zone: ' Z";
-    public static final String DATE_LOCAL_TIME = "EEE, d MMM yyyy HH:mm:ss Z";
-
-    public static final String YEAR_MONTH_DAY = "yyyy-MM-dd";
-    public static final String MONTH_DAY_MONTH_SHORT = "MMM dd";
-    public static final String MONTH_DAY_MONTH_LONG = "MMMM dd";
-    public static final String DAY_WEEK_DAY_MONTH_SHORT = "EEE dd";
-    public static final String DAY_WEEK_DAY_MONTH_LONG = "EEEE dd";
-    public static final String DAY_MONTH_YEAR = "d MMMM, yyyy";
-
-    public static final String HOUR_AM_PM_FORMAT = "h:mm a";
-    public static final String HOUR_TWO_FOUR_FORMAT = "HH:mm";
 
     // CRUD
     public static final String CLOSING = "Closing ";
@@ -954,7 +980,7 @@ public abstract class TableLab<T> {
     //////// COPY PASTE ///////////////////////////////////////////////////////////////////////////
 
 //    public static void create(SQLiteDatabase database) {
-//        database.execSQL(CREATE + TABLE + " (" +
+//        database.execSQL(CREATE_TABLE + TABLE + " (" +
 //                ID + " " + PRIMARY_KEY + ", " +
 //                NAME + " " + TEXT_NOT_NULL + ", " +
 //                CREATED + " " + INTEGER_NOT_NULL + ", " +
@@ -975,5 +1001,7 @@ public abstract class TableLab<T> {
 //        cursor.getString(cursor.getColumnIndex(NAME)),
 //        TableLab.date(cursor.getColumnIndex(CREATED)),
 //        TableLab.date(cursor.getColumnIndex(UPDATED))
+//                Log.v(TAG, "SELECT " + logFor(cols(columns)) + " FROM " + table() + logWhere(whereArgs)
+//                        + logSelect(queryArgs) + logByGroup(groupBy) + logHaving(having) + " ORDER BY " + orderBy + logLimit(limit));
 
 }
