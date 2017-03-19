@@ -66,9 +66,9 @@ public abstract class TableLab<T> {
     public abstract String table(); // Table name
     public abstract String[] where(); // Default columns to search
     public abstract String when(); // Default column to order by time
-    public abstract String orderBy(); // Default column to order alphabetically
-    public abstract String groupBy(); // Default column to order alphabetically
-    public abstract String having(); // Default column to order alphabetically
+    public abstract String orderBy(); // Default column to orderBy
+    public abstract String groupBy(); // Default column to groupBy
+    public abstract String having(); // Default column having
     public abstract ContentValues values(T t); // Used at save and update
     public abstract T model(Cursor cursor); // Any java bean to be rebuild from database
 
