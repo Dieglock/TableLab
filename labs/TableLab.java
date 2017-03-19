@@ -97,7 +97,6 @@ public abstract class TableLab<T> {
         if (printLog) {
             Log.v(TAG, SAVING + t.getClass().getSimpleName());
         }
-
         mDatabase.insert(table(), null, values(t));
     }
 
@@ -110,7 +109,6 @@ public abstract class TableLab<T> {
         if (printLog) {
             Log.v(TAG, SAVING_WITH_RESPONSE + t.getClass().getSimpleName());
         }
-
         return mDatabase.insertOrThrow(table(), null, values(t));
     }
 
@@ -122,7 +120,6 @@ public abstract class TableLab<T> {
         if (printLog) {
             Log.v(TAG, BATCH_SAVING);
         }
-
         for (int i=0;i<labTs.size();i++) {
             save(labTs.get(i));
         }
@@ -167,7 +164,6 @@ public abstract class TableLab<T> {
         if (printLog) {
             Log.v(TAG, DELETING + String.valueOf(id));
         }
-
         mDatabase.execSQL("DELETE FROM " + table() + " WHERE id =?", new String[]{String.valueOf(id)});
     }
 
@@ -175,7 +171,6 @@ public abstract class TableLab<T> {
         if (printLog) {
             Log.v(TAG, DELETING + where + "=" + String.valueOf(id));
         }
-
         mDatabase.execSQL("DELETE FROM " + table() + " WHERE " + where + "=?", new String[]{String.valueOf(id)});
     }
 
@@ -183,7 +178,6 @@ public abstract class TableLab<T> {
         if (printLog) {
             Log.v(TAG, DELETING + what);
         }
-
         mDatabase.execSQL("DELETE FROM " + table() + " WHERE " + where + "=?", new String[]{what});
     }
 
@@ -563,7 +557,6 @@ public abstract class TableLab<T> {
         sortOrder = orderBuilder.toString();
 
         try {
-
             SQLiteQueryBuilder builder = new SQLiteQueryBuilder();
             builder.setTables(theTable);
             String sql = builder.buildQuery(columns, queryArgs, theGroupBy, theHaving, sortOrder, limit);
@@ -572,13 +565,11 @@ public abstract class TableLab<T> {
                 Log.v(TAG, sql + logSelect(query));
             }
 
-
             if (asyncTask) {
                 mHeavyTask = new HeavyTask();
                 mHeavyTask.execute(new String[]{sql}, whereArgs);
 
                 try {
-
                     cursor = mHeavyTask.get();
 
                 } catch (InterruptedException e) {
@@ -586,7 +577,6 @@ public abstract class TableLab<T> {
                 } catch (ExecutionException e) {
                     Log.e(TAG, e.getMessage(), e.fillInStackTrace());
                 }
-
 
             } else  {
                 cursor = mDatabase.rawQuery(sql, whereArgs);
@@ -614,13 +604,11 @@ public abstract class TableLab<T> {
 
         @Override
         protected Cursor doInBackground(String[]... params) {
-//            DbHelper helper = new DbHelper(labContext());
-//            SQLiteDatabase asyncDb = helper.getReadableDatabase();
-
             if (printLog) {
                 Log.v(TAG, "AsyncTask in background start ");
             }
-                return mDatabase.rawQuery(params[0][0], params[1]);
+
+            return mDatabase.rawQuery(params[0][0], params[1]);
             }
 
             @Override
@@ -643,10 +631,9 @@ public abstract class TableLab<T> {
 
         String selection = SELECT + "`" + value + "`," + COUNT + "(*) " + AS + "`" + times + "`" +
                             FROM + table;
+                 // TODO
                 // + LIMIT + "1";
-                //+ GROUP_BY + "`" + value +"`" + ORDER_BY + "`" + times + "`" +
-
-
+                //+ GROUP_BY + "`" + value +"`" + ORDER_BY + "`" + times + "`" + 
         try {
             if (printLog) {
                 Log.v(TAG, selection);
@@ -675,7 +662,6 @@ public abstract class TableLab<T> {
         // + LIMIT + "1";
         //+ GROUP_BY + "`" + value +"`" + ORDER_BY + "`" + times + "`" +
 
-
         try {
             if (printLog) {
                 Log.v(TAG, selection);
@@ -698,7 +684,7 @@ public abstract class TableLab<T> {
         String select = SELECT_COUNT_ALL_FROM + table();
 
         if (printLog) {
-            // Log.v(TAG, select);
+            /Log.v(TAG, select);
         }
 
         int count = -1;
@@ -722,7 +708,7 @@ public abstract class TableLab<T> {
     public ArrayList<String> tables() {
         String select = "select name from sqlite_master where type='table' order by name";
         if (printLog) {
-            // Log.v(TAG, select);
+            Log.v(TAG, select);
         }
         ArrayList<String> tables = new ArrayList<>();
         Cursor cursor = mDatabase.rawQuery(select, null);
@@ -736,7 +722,7 @@ public abstract class TableLab<T> {
     public ArrayList<String> views() {
         String select = "select name from sqlite_master where type='view' order by name";
         if (printLog) {
-            // Log.v(TAG, select);
+            Log.v(TAG, select);
         }
         ArrayList<String> tables = new ArrayList<>();
         Cursor cursor = mDatabase.rawQuery(select, null);
@@ -750,7 +736,7 @@ public abstract class TableLab<T> {
     public ArrayList<String> columns(String table) {
         String select = "PRAGMA table_info(" + table + ")";
         if (printLog) {
-            // Log.v(TAG, select);
+            Log.v(TAG, select);
         }
 
         ArrayList<String> columns = new ArrayList<>();
@@ -773,7 +759,7 @@ public abstract class TableLab<T> {
     public Cursor data(String[] columns) {
         String query = SELECT_ALL_FROM + table();
         if (printLog) {
-            // Log.v(TAG, query + " WHERE " + logWhere(columns));
+            Log.v(TAG, query + " WHERE " + logWhere(columns));
         }
         return mDatabase.rawQuery(SELECT_ALL_FROM + table(), columns);
     }
@@ -781,14 +767,12 @@ public abstract class TableLab<T> {
     public Cursor data() {
         String query = SELECT_ALL_FROM + table();
         if (printLog) {
-            // Log.v(TAG, query);
+            Log.v(TAG, query);
         }
-
         return mDatabase.rawQuery(query, null);
     }
 
     public String schema() {
-
         ArrayList<String> schema = new ArrayList<>();
         int max = tables().size();
         schema.add("TABLES\n");
