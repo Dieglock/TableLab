@@ -31,10 +31,10 @@ Lets say the bean in question is Word(id, name, usage_example, created, updated)
 
           DbManager manager = new DbManager(activity);
           WordTable wordLab = manager.openWordLab();
-          wordLad.save(myBean); // ETC
+          wordLad.save(myBean); // ETC*
           manager.close(wordLab); // do not forget
 
-You can save, find, update, list, normally, asynchronously. Just write few lines and that's it.
+* You can save, find, update, list, normally, asynchronously. Just write few lines and that's it.
 
 # Entension example
 
@@ -47,13 +47,13 @@ You can save, find, update, list, normally, asynchronously. Just write few lines
         super(activity, database);
        }
 
-       public static void create(SQLiteDatabase database) {
+       public static void create(SQLiteDatabase database) { // uses statics strings for easy debuging.
         database.execSQL(CREATE + TABLE + " (" +
-                ID + " " + PRIMARY_KEY + ", " +
-                NAME + " " + TEXT_NOT_NULL + ", " +
-                USAGE_EXAMPLE + " " + TEXT_NOT_NULL + ", " +
-                CREATED + " " + INTEGER_NOT_NULL + ", " +
-                UPDATED + " " + INTEGER_NOT_NULL + ")");
+                ID + PRIMARY_KEY + ", " +
+                NAME + TEXT_NOT_NULL + ", " +
+                USAGE_EXAMPLE + TEXT_NOT_NULL + ", " +
+                CREATED + INTEGER_NOT_NULL + ", " +
+                UPDATED + INTEGER_NOT_NULL + ")");
        }
 
        public static void drop(SQLiteDatabase database) {
@@ -70,31 +70,35 @@ You can save, find, update, list, normally, asynchronously. Just write few lines
         return NAME; // default column to order alphabetically
        }
 
-    @Override
-    public String when() {
-        return UPDATED; // default column to oder by time
-    }
+       public static String[] fullWhere() { 
+        return new String[] { NAME, USAGE_EXAMPLE } // You can easily define extra where (columns to )
+       }
 
-    @Override
-    public ContentValues values(Word word) { // default method to save and upate
-        ContentValues values = new ContentValues();
-        values.put(NAME, word.getName());
-        values.put(USAGE_EXAMPLE, word.getExtra());
-        values.put(CREATED, word.getCreated().getMillis());
-        values.put(UPDATED, word.getCreated().getMillis());
-        return values;
-    }
+      @Override
+      public String when() {
+          return UPDATED; // default column to oder by time
+      }
 
-    @Override
-    public Word model(Cursor cursor) { // default method to recreate with cursor
-        return new Word(
-        cursor.getInt(cursor.getColumnIndex(ID)),
-        cursor.getString(cursor.getColumnIndex(NAME)),
-        cursor.getString(cursor.getColumnIndex(USAGE_EXAMPLE)),
-        TableLab.date(cursor.getColumnIndex(CREATED)),
-        TableLab.date(cursor.getColumnIndex(UPDATED))
-        );
-    }
+      @Override
+      public ContentValues values(Word word) { // default method to save and upate
+          ContentValues values = new ContentValues();
+          values.put(NAME, word.getName());
+          values.put(USAGE_EXAMPLE, word.getExtra());
+          values.put(CREATED, word.getCreated().getMillis());
+          values.put(UPDATED, word.getCreated().getMillis());
+          return values;
+      }
+
+      @Override
+      public Word model(Cursor cursor) { // default method to recreate with cursor
+          return new Word(
+          cursor.getInt(cursor.getColumnIndex(ID)),
+          cursor.getString(cursor.getColumnIndex(NAME)),
+          cursor.getString(cursor.getColumnIndex(USAGE_EXAMPLE)),
+          TableLab.date(cursor.getColumnIndex(CREATED)),
+          TableLab.date(cursor.getColumnIndex(UPDATED))
+          );
+      }
     }
 
 
