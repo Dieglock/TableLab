@@ -33,7 +33,7 @@ public class DbManager {
         return new DbLab(mActivity, readable());
     }
 
-
+    // new tables here:
 
     private SQLiteDatabase writable() {
         return mDatabase = mDbHelper.getWritableDatabase();
