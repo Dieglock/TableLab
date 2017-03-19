@@ -1,16 +1,12 @@
-package com.dominicapps.dictionary.tablelab.labs;
+//package com.dominicapps.dictionary.tablelab.labs;
+package com.dominicapps.tablelab.lab.labs;
 
 import android.app.Activity;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 
-import com.dominicapps.dictionary.tablelab.TableLab;
-import com.dominicapps.dictionary.tablelab.extras.Pair;
-
-import org.joda.time.DateTime;
-
-import java.util.ArrayList;
+import com.dominicapps.tablelab.lab.utils.Pair;
 
 /**
  * Lab to fast create tables with common id, left, right.

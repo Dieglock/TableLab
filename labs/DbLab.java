@@ -1,14 +1,13 @@
-package com.dominicapps.dictionary.tablelab.labs;
+package com.dominicapps.tablelab.lab.labs;
 
 import android.app.Activity;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 
-import com.dominicapps.dictionary.tablelab.TableLab;
 
 /**
- * Empty class to call the DB info.
+ * Empty class helpful to query the database meta data info.
  */
 
 public class DbLab extends TableLab {
@@ -17,7 +16,7 @@ public class DbLab extends TableLab {
         super(activity, database);
     }
 
-    @Override
+        @Override
     public String table() {
         return null;
     }
@@ -29,6 +28,21 @@ public class DbLab extends TableLab {
 
     @Override
     public String when() {
+        return null;
+    }
+
+    @Override
+    public String orderBy() {
+        return null;
+    }
+
+    @Override
+    public String groupBy() {
+        return null;
+    }
+
+    @Override
+    public String having() {
         return null;
     }
 

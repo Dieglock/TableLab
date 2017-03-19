@@ -1,66 +1,83 @@
-package com.dominicapps.dictionary.tablelab;
+package com.dominicapps.tablelab.lab.labs;
 
 import android.app.Activity;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteQueryBuilder;
+import android.os.AsyncTask;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.util.Patterns;
 
-import com.dominicapps.dictionary.tablelab.utils.DbManager;
+import com.dominicapps.tablelab.lab.db.DbManager;
 
 import org.joda.time.DateTime;
 
 import java.math.BigDecimal;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Currency;
 import java.util.List;
-import java.util.Locale;
 import java.util.Random;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.concurrent.ExecutionException;
+
+
+import android.app.Activity;
+import android.content.ContentValues;
+import android.database.Cursor;
+import android.database.DatabaseUtils;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteQueryBuilder;
+import android.os.AsyncTask;
+import android.support.annotation.Nullable;
+import android.util.Log;
+
+import com.dominicapps.dictionary.tablelab.db.DbHelper;
+import com.dominicapps.dictionary.tablelab.db.DbManager;
+
+import org.joda.time.DateTime;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
+import java.util.concurrent.ExecutionException;
 
 /**
- * Careful: where() != where
- *
- * @NotNullabe table(): name of the table
- * @NotNullable values() Android Content Values
- * @NotNullable model() Java bean
- *
- *  Check MrBeanTable at app folder for an example
- *
  * @param <T> Any java bean
+ * returns crud and meta data.
  */
 public abstract class TableLab<T> {
     public static final String TAG = TableLab.class.getSimpleName();
 
-    
     /**
-     * If on every call made to database is logged.
+     * If on, every call made to database is logged.
      */
     public static boolean printLog = false;
 
     //////// ABSTRACTS ////////////////////////////////////////////////////////////////////////
 
     public abstract String table(); // Table name
-    public abstract String where(); // Default column to order alphabetically
+    public abstract String[] where(); // Default columns to search
     public abstract String when(); // Default column to order by time
-    public abstract ContentValues values(T t);
-    public abstract T model(Cursor cursor);
+    public abstract String orderBy(); // Default column to order alphabetically
+    public abstract String groupBy(); // Default column to order alphabetically
+    public abstract String having(); // Default column to order alphabetically
+    public abstract ContentValues values(T t); // Used at save and update
+    public abstract T model(Cursor cursor); // Any java bean to be rebuild from database
 
     //////// FIELDS ///////////////////////////////////////////////////////////////////////////
 
     private SQLiteDatabase mDatabase = null;
-    private DbManager mDbManager;
-    private Activity mActivity;
-    private HeavyTask mHeavyTask;
+    private DbManager mDbManager; // Manager class for table. Good to control life cycle.
+    private Activity mActivity; // Context
+    private HeavyTask mHeavyTask; // Async Task
 
     //////// CONSTRUCTOR ///////////////////////////////////////////////////////////////////////
 
@@ -78,7 +95,7 @@ public abstract class TableLab<T> {
      */
     public void save(T t) {
         if (printLog) {
-            Log.v(TAG, "Saving " + t.getClass().getSimpleName());
+            Log.v(TAG, SAVING + t.getClass().getSimpleName());
         }
 
         mDatabase.insert(table(), null, values(t));
@@ -91,7 +108,7 @@ public abstract class TableLab<T> {
      */
     public long saveWithResponse(T t) {
         if (printLog) {
-            Log.v(TAG, "Saving with response" + t.getClass().getSimpleName());
+            Log.v(TAG, SAVING_WITH_RESPONSE + t.getClass().getSimpleName());
         }
 
         return mDatabase.insertOrThrow(table(), null, values(t));
@@ -103,7 +120,7 @@ public abstract class TableLab<T> {
      */
     public void saveBatch(ArrayList<T> labTs) {
         if (printLog) {
-            Log.v(TAG, "Batch saving");
+            Log.v(TAG, BATCH_SAVING);
         }
 
         for (int i=0;i<labTs.size();i++) {
@@ -120,7 +137,7 @@ public abstract class TableLab<T> {
      */
     public void update(T t, int id) {
         if (printLog) {
-            Log.v(TAG, "Updating " + t.getClass().getSimpleName());
+            Log.v(TAG, UPDATING + t.getClass().getSimpleName());
         }
         // TODO get id from t
         mDatabase.update(table(), values(t), "id=?", new String[]{String.valueOf(id)});
@@ -134,7 +151,7 @@ public abstract class TableLab<T> {
      */
     public long updateWithResponse(T t, int id) {
         if (printLog) {
-            Log.v(TAG, "Updating with response " + t.getClass().getSimpleName());
+            Log.v(TAG, UPDATING_WITH_RESPONSE + t.getClass().getSimpleName());
         }
         // TODO get id from t
         return mDatabase.update(table(), values(t), "id=?", new String[]{String.valueOf(id)});
@@ -148,7 +165,7 @@ public abstract class TableLab<T> {
      */
     public void delete(int id) {
         if (printLog) {
-            Log.v(TAG, "Deleting " + String.valueOf(id));
+            Log.v(TAG, DELETING + String.valueOf(id));
         }
 
         mDatabase.execSQL("DELETE FROM " + table() + " WHERE id =?", new String[]{String.valueOf(id)});
@@ -156,7 +173,7 @@ public abstract class TableLab<T> {
 
     public void delete(int id, String where) {
         if (printLog) {
-            Log.v(TAG, "Deleting " + where + "=" + String.valueOf(id));
+            Log.v(TAG, DELETING + where + "=" + String.valueOf(id));
         }
 
         mDatabase.execSQL("DELETE FROM " + table() + " WHERE " + where + "=?", new String[]{String.valueOf(id)});
@@ -164,7 +181,7 @@ public abstract class TableLab<T> {
 
     public void delete(String what, String where) {
         if (printLog) {
-            Log.v(TAG, "Deleting " + what);
+            Log.v(TAG, DELETING + what);
         }
 
         mDatabase.execSQL("DELETE FROM " + table() + " WHERE " + where + "=?", new String[]{what});
@@ -212,13 +229,13 @@ public abstract class TableLab<T> {
 
     /**
      *
-     * @param id
-     * @param columns
-     * @param where
-     * @param query
-     * @param isExact
-     * @param startDate
-     * @param endDate
+     * @param id id
+     * @param columns columns to retrieve
+     * @param where columns to search
+     * @param query search criteria
+     * @param isExact choose query = ? | query like = ?
+     * @param startDate start date for range when()
+     * @param endDate end date for range()
      * @return
      */
     public T select(int id,
@@ -230,8 +247,8 @@ public abstract class TableLab<T> {
                     @Nullable DateTime endDate) {
         T t = null;
         Cursor cursor = null;
-        String queryArgs = null;
-        String[] whereArgs = null;
+        String queryArgs;
+        String[] whereArgs;
         StringBuilder queryBuilder = new StringBuilder();
         List<String> params = new ArrayList<>();
 
@@ -240,20 +257,31 @@ public abstract class TableLab<T> {
             params.add(String.valueOf(id));
 
         } else if (!isEmpty(query)) {
+            String[] theWhere;
 
             if (null != where) {
-                for (int i = 0; i < where.length; i++) {
+                theWhere = where;
+            } else {
+                theWhere = where();
+            }
 
-                    if (queryBuilder.length() > 0) {
-                        queryBuilder.append(" AND ");
-                    }
+            if (null != theWhere) {
+                for (int i = 0; i < theWhere.length; i++) {
 
                     if (isExact) {
-                        queryBuilder.append(where[i]).append(" =?");
+                        if (queryBuilder.length() > 0) {
+                            queryBuilder.append(" AND ");
+                        }
+
+                        queryBuilder.append(theWhere[i]).append(" =?");
                         params.add(query);
 
                     } else {
-                        queryBuilder.append(where[i]).append(" LIKE ?");
+                        if (queryBuilder.length() > 0) {
+                            queryBuilder.append(" OR ");
+                        }
+
+                        queryBuilder.append(theWhere[i]).append(" LIKE ?");
                         params.add(prepareLikeParams(query.toLowerCase()));
                     }
                 }
@@ -313,35 +341,35 @@ public abstract class TableLab<T> {
     }
 
     public ArrayList<T> list(String query, boolean orderByTime, boolean ascOrder) {
-        return select(null, null, new String[]{where()}, where(), query, false, null, null, null, orderByTime, ascOrder, null, null, false);
+        return select(null, null, null, orderBy(), query, false, null, null, null, orderByTime, ascOrder, null, null, false);
     }
 
     public ArrayList<T> list(String[] where, String query, boolean orderByTime, boolean ascOrder) {
-        return select(null, null, where, where(), query, false, null, null, null, orderByTime, ascOrder, null, null, false);
+        return select(null, null, where, orderBy(), query, false, null, null, null, orderByTime, ascOrder, null, null, false);
     }
 
-    public ArrayList<T> list(String[] where, String orderByColumn, String query, boolean orderByTime, boolean ascOrder) {
-        return select(null, null, where, orderByColumn, query, false, null, null, null, orderByTime, ascOrder, null, null, false);
+    public ArrayList<T> list(String[] where, String orderBy, String query, boolean orderByTime, boolean ascOrder) {
+        return select(null, null, where, orderBy, query, false, null, null, null, orderByTime, ascOrder, null, null, false);
     }
 
     public ArrayList<T> like(String query, boolean orderByTime, boolean ascOrder) {
-        return select(null, null, new String[]{where()}, where(), query, false, null, null, null, orderByTime, ascOrder, null, null, false);
+        return select(null, null, null, orderBy(), query, false, null, null, null, orderByTime, ascOrder, null, null, false);
     }
 
     public ArrayList<T> like(String[] where, String query, boolean orderByTime, boolean ascOrder) {
-        return select(null, null, where, where(), query, false, null, null, null, orderByTime, ascOrder, null, null, false);
+        return select(null, null, where, orderBy(), query, false, null, null, null, orderByTime, ascOrder, null, null, false);
     }
 
-    public ArrayList<T> like(String[] where, String orderByColumn, String query, boolean orderByTime, boolean ascOrder) {
-        return select(null, null, where, orderByColumn, query, false, null, null, null, orderByTime, ascOrder, null, null, false);
+    public ArrayList<T> like(String[] where, String orderBy, String query, boolean orderByTime, boolean ascOrder) {
+        return select(null, null, where, orderBy, query, false, null, null, null, orderByTime, ascOrder, null, null, false);
     }
 
     public ArrayList<T> exact(String query, boolean orderByTime, boolean ascOrder) {
-        return select(null, null, new String[]{where()}, where(), query, true, null, null, null, orderByTime, ascOrder, null, null, false);
+        return select(null, null, null, orderBy(), query, true, null, null, null, orderByTime, ascOrder, null, null, false);
     }
 
     public ArrayList<T> exact(String[] where, String query, boolean orderByTime, boolean ascOrder) {
-        return select(null, null, where, where(), query, true, null, null, null, orderByTime, ascOrder, null, null, false);
+        return select(null, null, where, orderBy(), query, true, null, null, null, orderByTime, ascOrder, null, null, false);
     }
 
     public ArrayList<T> exact(String[] where, String orderByColumn, String query, boolean orderByTime, boolean ascOrder) {
@@ -355,15 +383,15 @@ public abstract class TableLab<T> {
     }
 
     public ArrayList<T> listAsync(String query, boolean orderByTime, boolean ascOrder) {
-        return select(null, null, new String[]{where()}, where(), query, false, null, null, null, orderByTime, ascOrder, null, null, true);
+        return select(null, null, null, orderBy(), query, false, null, null, null, orderByTime, ascOrder, null, null, true);
     }
 
     public ArrayList<T> listAsync(String[] where, String query, boolean orderByTime, boolean ascOrder) {
-        return select(null, null, where, where(), query, false, null, null, null, orderByTime, ascOrder, null, null, true);
+        return select(null, null, where, orderBy(), query, false, null, null, null, orderByTime, ascOrder, null, null, true);
     }
 
-    public ArrayList<T> listAsync(String[] where, String orderByColumn, String query, boolean orderByTime, boolean ascOrder) {
-        return select(null, null, where, orderByColumn, query, false, null, null, null, orderByTime, ascOrder, null, null, true);
+    public ArrayList<T> listAsync(String[] where, String orderBy, String query, boolean orderByTime, boolean ascOrder) {
+        return select(null, null, where, orderBy, query, false, null, null, null, orderByTime, ascOrder, null, null, true);
     }
 
     //////// LIST COMMON //////////////////////////////////////////////////////////////////////
@@ -392,30 +420,29 @@ public abstract class TableLab<T> {
         return select(null, null, where, null, String.valueOf(parentId), true, null, null, null, orderByTime, ascOrder, null, null, true);
     }
 
-
     //////// LIST MASTER //////////////////////////////////////////////////////////////////////
 
     /**
      *
      * @param columns columns to retrieve
      * @param where columns to search
-     * @param orderByColumn select a different where from default where()
+     * @param orderBy select a different column from orderBy()
      * @param query search criteria
      * @param isExact choose query = ? | query like = ?
-     * @param groupBy group by
-     * @param having having
+     * @param groupBy choose different groups from groupBy()
+     * @param having choose different group having from having()
      * @param limit limit
-     * @param orderByTime choose when() | where()
+     * @param orderByTime choose when() | orderBy()
      * @param ascOrder choose ASC | DESC
      * @param start start date for range when()
-     * @param end end date for range()
-     * @param asyncTask task for heavy load
+     * @param end end date for range when()
+     * @param asyncTask choose true for heavy load
      * @return T object list
      */
     public ArrayList<T> select(String table,
                                @Nullable String[] columns,
                                @Nullable String[] where,
-                               String orderByColumn,
+                               String orderBy,
                                @Nullable String query,
                                boolean isExact,
                                String groupBy,
@@ -429,10 +456,11 @@ public abstract class TableLab<T> {
 
         ArrayList<T> objects = new ArrayList<>();
         Cursor cursor = null;
-        String queryArgs = null;
-        String[] whereArgs = null;
-        String orderBy = null;
+        String queryArgs;
+        String[] whereArgs;
+        String sortOrder;
         StringBuilder queryBuilder = new StringBuilder();
+        StringBuilder orderBuilder = new StringBuilder();
         List<String> params = new ArrayList<>();
 
         String theTable;
@@ -443,47 +471,60 @@ public abstract class TableLab<T> {
         }
 
         if (!isEmpty(query)) {
+            String[] theWhere;
 
-            for (int i = 0; i < where.length; i++) {
-                if (isExact) {
-                    if (queryBuilder.length() > 0) {
-                        queryBuilder.append(" AND ");
+            if (where != null) {
+                theWhere = where;
+            } else {
+                theWhere = where();
+            }
+
+            if (theWhere != null) {
+                for (int i = 0; i < theWhere.length; i++) {
+                    if (isExact) {
+                        if (queryBuilder.length() > 0) {
+                            queryBuilder.append(" AND ");
+                        }
+
+                        queryBuilder.append(theWhere[i]).append(" = ?");
+                        params.add(query);
+
+                    } else {
+                        if (queryBuilder.length() > 0) {
+                            queryBuilder.append(" OR ");
+                        }
+
+                        queryBuilder.append(theWhere[i]).append(" LIKE ?");
+                        params.add(prepareLikeParams(query.toLowerCase()));
                     }
-
-                    queryBuilder.append(where[i]).append("=?");
-                    params.add(query);
-
-                } else {
-                    if (queryBuilder.length() > 0) {
-                        queryBuilder.append(" OR ");
-                    }
-
-                    queryBuilder.append(where[i]).append(" LIKE ?");
-                    params.add(prepareLikeParams(query.toLowerCase()));
                 }
             }
         }
 
         if (orderByTime) {
-            if (ascOrder) {
-                orderBy = when() + " DESC ";
+            orderBuilder.append(when());
 
+            if (ascOrder) {
+                orderBuilder.append(" ASC ");
             } else {
-                orderBy = when() + " ASC ";
+                orderBuilder.append(" DESC ");
             }
 
         } else {
-            String theWhere = null;
-            if (null == orderByColumn) {
-                theWhere = where();
+            orderBuilder.append("lower(");
+            if (orderBy == null) {
+
+                orderBuilder.append(orderBy());
             } else {
-                theWhere = orderByColumn;
+                orderBuilder.append(orderBy);
             }
 
+            orderBuilder.append(")");
+
             if (ascOrder) {
-                orderBy = "lower(" + theWhere + ") ASC ";
+                orderBuilder.append(" ASC ");
             } else {
-                orderBy = "lower(" + theWhere + ") DESC ";
+                orderBuilder.append(" DESC ");
             }
         }
 
@@ -500,17 +541,32 @@ public abstract class TableLab<T> {
             params.add(String.valueOf(end.getMillis()));
         }
 
-        if (queryBuilder.length() > 0) { // safety check
-            queryArgs = queryBuilder.toString(); // Column = ? // LIKE ?
-            whereArgs = new String[params.size()]; // {"string", "date", "integer", "etc"}
-            params.toArray(whereArgs);
+        String theGroupBy;
+        String theHaving;
+
+        if (groupBy != null) {
+            theGroupBy = groupBy;
+        } else {
+            theGroupBy = groupBy();
         }
+
+        if (having != null) {
+            theHaving = having;
+        } else {
+            theHaving = having();
+        }
+
+        queryArgs = queryBuilder.toString(); // Column = ? // LIKE ?
+        whereArgs = new String[params.size()]; // {"string", "date", "integer", "etc"}
+        params.toArray(whereArgs);
+
+        sortOrder = orderBuilder.toString();
 
         try {
 
             SQLiteQueryBuilder builder = new SQLiteQueryBuilder();
             builder.setTables(theTable);
-            String sql = builder.buildQuery(columns, queryArgs, groupBy, having, orderBy, limit);
+            String sql = builder.buildQuery(columns, queryArgs, theGroupBy, theHaving, sortOrder, limit);
 
             if (printLog) {
                 Log.v(TAG, sql + logSelect(query));
@@ -547,7 +603,6 @@ public abstract class TableLab<T> {
             mDbManager.close(cursor);
         }
 
-//        Log.d(TAG, "Size: " + String.valueOf(objects.size()));
         return objects;
     }
 
@@ -894,7 +949,13 @@ public abstract class TableLab<T> {
         return mDatabase;
     }
 
-    //////// CONSTANTS //////////////////////////////////////////////////////////////////////////
+    //////// SEED ///////////////////////////////////////////////////////////////////////////////
+
+    public static BufferedReader txtReader(Activity activity, String uri) throws IOException {
+        return new BufferedReader(new InputStreamReader(activity.getAssets().open(uri)));
+    }
+
+    //////// CONSTANTS easy to i18 ////////////////////////////////////////////////////////////////
 
     public static final String ID = "id";
     public static final String PARENT_ID = "parent_id";
@@ -973,18 +1034,26 @@ public abstract class TableLab<T> {
     public static final String UPDATED = "updated";
 
     // CRUD
-    public static final String CLOSING = "Closing ";
-    public static final String DELETING = "Deleting ";
-    public static final String OPENING = "Opening ";
+    public static final String CLOSING = "Closing: ";
+    public static final String DELETING = "Deleting: ";
+    public static final String OPENING = "Opening: ";
+    public static final String BATCH_SAVING = "Batch saving: ";
+    public static final String SAVING = "Saving: ";
+    public static final String SAVING_WITH_RESPONSE = "Saving with response: ";
+    public static final String UPDATING = "Updating: ";
+    public static final String UPDATING_WITH_RESPONSE = "Updating with response: ";
+
+    public static final String DATABASE_NAME = "example.db";
+    public static final int DATABASE_VERSION = 1;
 
     //////// COPY PASTE ///////////////////////////////////////////////////////////////////////////
 
 //    public static void create(SQLiteDatabase database) {
 //        database.execSQL(CREATE_TABLE + TABLE + " (" +
-//                ID + PRIMARY_KEY + ", " +
-//                NAME + TEXT_NOT_NULL + ", " +
-//                CREATED + INTEGER_NOT_NULL + ", " +
-//                UPDATED + INTEGER_NOT_NULL + ")");
+//                ID + " " + PRIMARY_KEY + ", " +
+//                NAME + " " + TEXT_NOT_NULL + ", " +
+//                CREATED + " " + INTEGER_NOT_NULL + ", " +
+//                UPDATED + " " + INTEGER_NOT_NULL + ")");
 //    }
 //
 //    public static void drop(SQLiteDatabase database) {
@@ -1001,8 +1070,6 @@ public abstract class TableLab<T> {
 //        cursor.getString(cursor.getColumnIndex(NAME)),
 //        TableLab.date(cursor.getColumnIndex(CREATED)),
 //        TableLab.date(cursor.getColumnIndex(UPDATED))
-    
 //                Log.v(TAG, "SELECT " + logFor(cols(columns)) + " FROM " + table() + logWhere(whereArgs)
 //                        + logSelect(queryArgs) + logByGroup(groupBy) + logHaving(having) + " ORDER BY " + orderBy + logLimit(limit));
-
 }

@@ -1,4 +1,5 @@
-package com.dominicapps.dictionary.tablelab.extras;
+//package com.dominicapps.dictionary.tablelab.extras;
+package com.dominicapps.tablelab.lab.utils;
 
 import com.dominicapps.dictionary.tablelab.TableLab;
 

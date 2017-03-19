@@ -1,4 +1,5 @@
-package com.dominicapps.dictionary.tablelab.utils;
+// package com.dominicapps.dictionary.tablelab.utils;
+package com.dominicapps.tablelab.lab.db;
 
 import android.app.Activity;
 import android.content.Context;
@@ -6,7 +7,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
-import com.dominicapps.dictionary.tablelab.TableLab;
+import com.dominicapps.tablelab.lab.labs.TableLab;
 
 import java.io.File;
 

@@ -1,11 +1,12 @@
-package com.dominicapps.dictionary.tablelab.utils;
+//package com.dominicapps.dictionary.tablelab.utils;
+package com.dominicapps.tablelab.lab.db;
 
 import android.app.Activity;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 
-import com.dominicapps.dictionary.tablelab.TableLab;
-import com.dominicapps.dictionary.tablelab.labs.DbLab;
+import com.dominicapps.tablelab.lab.labs.DbLab;
+import com.dominicapps.tablelab.lab.labs.TableLab;
 
 /**
  * Handles database open close cycle. Allows you to open a close SQL database / TableLab
