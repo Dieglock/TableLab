@@ -30,10 +30,11 @@ Lets say the bean in question is Word(id, name, usage_example, created, updated)
 4. You can open close it like this:
 
           DbManager manager = new DbManager(activity);
-          WordTable wordLab = manger.openWordLab();
+          WordTable wordLab = manager.openWordLab();
           wordLad.save(myBean); // ETC
-          manager.close(wordLab); // do nor forget
+          manager.close(wordLab); // do not forget
 
+You can save, find, update, list, normally, asynchronously. Just write few lines and that's it.
 
 # Entension example
 

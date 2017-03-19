@@ -981,10 +981,10 @@ public abstract class TableLab<T> {
 
 //    public static void create(SQLiteDatabase database) {
 //        database.execSQL(CREATE_TABLE + TABLE + " (" +
-//                ID + " " + PRIMARY_KEY + ", " +
-//                NAME + " " + TEXT_NOT_NULL + ", " +
-//                CREATED + " " + INTEGER_NOT_NULL + ", " +
-//                UPDATED + " " + INTEGER_NOT_NULL + ")");
+//                ID + PRIMARY_KEY + ", " +
+//                NAME + TEXT_NOT_NULL + ", " +
+//                CREATED + INTEGER_NOT_NULL + ", " +
+//                UPDATED + INTEGER_NOT_NULL + ")");
 //    }
 //
 //    public static void drop(SQLiteDatabase database) {
@@ -1001,6 +1001,7 @@ public abstract class TableLab<T> {
 //        cursor.getString(cursor.getColumnIndex(NAME)),
 //        TableLab.date(cursor.getColumnIndex(CREATED)),
 //        TableLab.date(cursor.getColumnIndex(UPDATED))
+    
 //                Log.v(TAG, "SELECT " + logFor(cols(columns)) + " FROM " + table() + logWhere(whereArgs)
 //                        + logSelect(queryArgs) + logByGroup(groupBy) + logHaving(having) + " ORDER BY " + orderBy + logLimit(limit));
 
