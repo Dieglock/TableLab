@@ -6,7 +6,7 @@ It is better to copy the lab folder extend and enjoy...
 
 # Usage
 
-Lets say the bean in question is a trilingual dictionary entry like Word(id, nombre, name, nomine, description, created, updated);
+Lets say the bean in question is a trilingual dictionary entry like Word(id, nombre, name, nomine, description, image (string), created, updated);
 
 1. Extend TableLab with your object: 
 
