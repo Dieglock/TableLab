@@ -171,7 +171,7 @@ public abstract class TableLab<T> {
     }
 
     /**
-     * 
+     *
      * @param id
      * @param where
      */
@@ -184,7 +184,7 @@ public abstract class TableLab<T> {
     }
 
     /**
-     * 
+     *
      * @param what
      * @param where
      */
@@ -201,7 +201,7 @@ public abstract class TableLab<T> {
     /**
      * select 1st ID = id
      * @param id key
-     * @return select(...)
+     * @return t
      */
     public T find(int id) {
         return select(id, null, null, null, true, null, null);
@@ -210,24 +210,24 @@ public abstract class TableLab<T> {
     /**
      * select 1st where() LIKE query
      * @param query search arguments
-     * @return select(...)
+     * @return t
      */
-    public T like(String query, String[] where) {
-        return select(0, null, where, query, false, null, null);
+    public T like(String query) {
+        return select(0, null, where(), query, false, null, null);
     }
 
     /**
      * select 1st where() = query
      * @param query search arguments
-     * @return select(...)
+     * @return t
      */
-    public T exact(String query, String[] where) {
-        return select(0, null, where, query, true, null, null);
+    public T exact(String query) {
+        return select(0, null, where(), query, true, null, null);
     }
 
     /**
      * select 1st ID = random id(entries())
-     * @return select(...)
+     * @return t
      */
     public T random() {
         int id = randomInt(entries());
@@ -385,7 +385,7 @@ public abstract class TableLab<T> {
     }
 
     /**
-     * 
+     *
      * @param orderByTime
      * @param ascOrder
      * @return
@@ -395,7 +395,7 @@ public abstract class TableLab<T> {
     }
 
     /**
-     * 
+     *
      * @param query
      * @param isExact
      * @param orderByTime
@@ -407,7 +407,7 @@ public abstract class TableLab<T> {
     }
 
     /**
-     * 
+     *
      * @param limit
      * @return
      */
@@ -427,7 +427,7 @@ public abstract class TableLab<T> {
      * @param isExact choose query = ? | query like = ?
      * @param groupBy choose different groups from groupBy()
      * @param having choose different group having from having()
-     * @param limit limit
+     * @param limit list limit
      * @param orderByTime choose when() | orderBy()
      * @param ascOrder choose ASC | DESC
      * @param start start date for range when()
@@ -629,7 +629,7 @@ public abstract class TableLab<T> {
     //////// COMMON QUERIES ///////////////////////////////////////////////////////////////////////
 
     /**
-     * 
+     *
      * @param table
      * @param value
      * @return
@@ -664,7 +664,7 @@ public abstract class TableLab<T> {
     }
 
     /**
-     * 
+     *
      * @param table
      * @param value
      * @return
@@ -696,6 +696,10 @@ public abstract class TableLab<T> {
             mDbManager.close(cursor);
         }
         return t;
+    }
+
+    public void standardDeviation() {
+        // TODO
     }
 
     //////// META QUERIES ///////////////////////////////////////////////////////////////////////
@@ -847,7 +851,7 @@ public abstract class TableLab<T> {
             }
         }
     }
-    
+
     //////// UTILS /////////////////////////////////////////////////////////////////////////////
 
     public static DateTime now() {
