@@ -75,8 +75,8 @@ public abstract class TableLab<T> {
     //////// FIELDS ///////////////////////////////////////////////////////////////////////////
 
     private SQLiteDatabase mDatabase = null;
-    private DbManager mDbManager; // Roads class for table. Good to control life cycle.
-    private Activity mActivity; // Context
+    private DbManager mDbManager;
+    private Activity mActivity;
 
     //////// CONSTRUCTOR ///////////////////////////////////////////////////////////////////////
 
@@ -237,8 +237,8 @@ public abstract class TableLab<T> {
     //////// FIND MASTER //////////////////////////////////////////////////////////////////////
 
     /**
-     *
-     * @param id id
+     * 
+     * @param id id if 0, searches by query
      * @param columns columns to retrieve
      * @param where columns to search
      * @param query search criteria
@@ -382,16 +382,6 @@ public abstract class TableLab<T> {
      */
     public ArrayList<T> children(int parentId, String where, boolean orderByTime, boolean ascOrder, boolean asyncTask) {
         return select(null, null, new String[]{where}, null, String.valueOf(parentId), true, null, null, null, orderByTime, ascOrder, null, null, asyncTask);
-    }
-
-    /**
-     *
-     * @param orderByTime
-     * @param ascOrder
-     * @return
-     */
-    public ArrayList<T> async(boolean orderByTime, boolean ascOrder) {
-        return select(null, null, null, null, null, false, null, null, null, orderByTime, ascOrder, null, null, true);
     }
 
     /**
@@ -608,11 +598,8 @@ public abstract class TableLab<T> {
 
         @Override
         protected Cursor doInBackground(String[]... params) {
-//            DbHelper helper = new DbHelper(context());
-//            SQLiteDatabase asyncDb = helper.getReadableDatabase();
-
             if (printLog) {
-                Log.v(TAG, "AsyncTask in background start ");
+                Log.v(TAG, "Starting asyncTask");
             }
                 return mDatabase.rawQuery(params[0][0], params[1]);
             }
@@ -621,7 +608,7 @@ public abstract class TableLab<T> {
             protected void onPostExecute(Cursor cursor) {
                 super.onPostExecute(cursor);
             if (printLog) {
-                Log.v(TAG, "AsyncTask in background complete");
+                Log.v(TAG, "Asynctask complete");
             }
         }
     }
@@ -908,42 +895,6 @@ public abstract class TableLab<T> {
             return " WHERE " + Arrays.toString(array);
         }
     }
-
-//    public static String logFor(String[] cols) {
-//        return Arrays.toString(cols);
-//    }
-//
-//    public static String[] cols(String[] columns) {
-//        if (null == columns || columns.length < 1) {
-//            return new String[]{"*"};
-//        } else {
-//            return columns;
-//        }
-//    }
-
-//    public static String logLimit(String limit) {
-//        if (isEmpty(limit)) {
-//            return "";
-//        } else {
-//            return " LIMIT " + limit;
-//        }
-//    }
-//
-//    public static String logByGroup(String s) {
-//        if (isEmpty(s)) {
-//            return "";
-//        } else {
-//            return " GROUP BY "  + s;
-//        }
-//    }
-//
-//    public static String logHaving(String s) {
-//        if (isEmpty(s)) {
-//            return "";
-//        } else {
-//            return " HAVING " + s;
-//        }
-//    }
 
     public static void classToLog(String action, Class c) {
         if (printLog) {
