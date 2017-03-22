@@ -29,7 +29,7 @@ public class DbManager {
 
     public DbLab openDbLab() {
         if (TableLab.printLog) {
-            TableLab.toLog("Opening ", DbLab.class);
+            TableLab.classToLog("Opening ", DbLab.class);
         }
         return new DbLab(mActivity, readable());
     }
@@ -51,7 +51,7 @@ public class DbManager {
     public void close(SQLiteDatabase database) {
         if (null != database) {
             if (TableLab.printLog) {
-                TableLab.toLog("Closing ", database.getClass());
+                TableLab.classToLog("Closing ", database.getClass());
             }
             database.close();
         }
@@ -60,7 +60,7 @@ public class DbManager {
     public void close(Cursor cursor) {
         if (null != cursor) {
             if (TableLab.printLog) {
-                TableLab.toLog("Closing ", cursor.getClass());
+                TableLab.classToLog("Closing ", cursor.getClass());
             }
             cursor.close();
         }

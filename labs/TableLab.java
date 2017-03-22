@@ -7,35 +7,10 @@ import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.os.AsyncTask;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
-import android.util.Patterns;
 
 import com.dominicapps.tablelab.lab.db.DbManager;
-
-import org.joda.time.DateTime;
-
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
-import java.util.concurrent.ExecutionException;
-
-
-import android.app.Activity;
-import android.content.ContentValues;
-import android.database.Cursor;
-import android.database.DatabaseUtils;
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteQueryBuilder;
-import android.os.AsyncTask;
-import android.support.annotation.Nullable;
-import android.util.Log;
-
-import com.dominicapps.dictionary.tablelab.db.DbHelper;
-import com.dominicapps.dictionary.tablelab.db.DbManager;
 
 import org.joda.time.DateTime;
 
@@ -1003,34 +978,4 @@ public abstract class TableLab<T> {
     protected static final String SAVING_WITH_RESPONSE = "Saving with response: ";
     protected static final String UPDATING = "Updating: ";
     protected static final String UPDATING_WITH_RESPONSE = "Updating with response: ";
-
-    protected static final String DATABASE_NAME = "example.db";
-    protected static final int DATABASE_VERSION = 1;
-
-    //////// COPY PASTE ///////////////////////////////////////////////////////////////////////////
-
-//    public static void create(SQLiteDatabase database) {
-//        database.execSQL(CREATE_TABLE + TABLE + " (" +
-//                ID + " " + PRIMARY_KEY + ", " +
-//                NAME + " " + TEXT_NOT_NULL + ", " +
-//                CREATED + " " + INTEGER_NOT_NULL + ", " +
-//                UPDATED + " " + INTEGER_NOT_NULL + ")");
-//    }
-//
-//    public static void drop(SQLiteDatabase database) {
-//        database.execSQL(DROP + TABLE);
-//    }
-//
-//        ContentValues values = new ContentValues();
-//        values.put(NAME, .getName());
-//        values.put(CREATED, .getCreated().getMillis());
-//        values.put(UPDATED, .getCreated().getMillis());
-//        return values;
-//
-//        cursor.getInt(cursor.getColumnIndex(ID)),
-//        cursor.getString(cursor.getColumnIndex(NAME)),
-//        TableLab.date(cursor.getColumnIndex(CREATED)),
-//        TableLab.date(cursor.getColumnIndex(UPDATED))
-//                Log.v(TAG, "SELECT " + logFor(cols(columns)) + " FROM " + table() + logWhere(whereArgs)
-//                        + logSelect(queryArgs) + logByGroup(groupBy) + logHaving(having) + " ORDER BY " + orderBy + logLimit(limit));
 }
