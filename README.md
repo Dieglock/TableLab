@@ -127,7 +127,11 @@ Lets say the bean in question is a trilingual dictionary entry like Word(id, nom
                   TableLab.date(cursor.getColumnIndex(UPDATED)));
       }
 
-      //////// SEED ///////////////////////////////////////////////////////////////////////////////
+That it is.
+
+# Seed
+Les's say you want to seed the db.
+
 
       public void seedFromTxt(Activity activity) { // example seed from assets folder .txt file.
           BufferedReader reader = null;
